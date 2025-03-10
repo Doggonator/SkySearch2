@@ -9,6 +9,7 @@ from selenium.webdriver.common.action_chains import ActionChains
 from PIL import Image
 import io
 from selenium.webdriver.common.keys import Keys
+from webdriver_manager.core.os_manager import ChromeType
 window_size = (1000, 800)
 st.set_page_config(layout="wide")
 if "mode" not in st.session_state:
@@ -25,7 +26,7 @@ if st.session_state.mode == 1:
             options = Options()
             options.add_argument("--window_size={window_size[1]},{window_size[2]}")
             options.add_argument('--headless=new')
-            browser = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
+            browser = webdriver.Chrome(service=Service(ChromeDriverManager(chrome_type=ChromeType.CHROMIUM).install()), options=options)
         with st.spinner("Loading page..."):
             browser.get(url_input)
             #wait for the page to fully load
@@ -51,7 +52,7 @@ if st.session_state.mode == 1:
             options = Options()
             options.add_argument("--window_size={window_size[1]},{window_size[2]}")
             options.add_argument('--headless=new')
-            browser = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
+            browser = webdriver.Chrome(service=Service(ChromeDriverManager(chrome_type=ChromeType.CHROMIUM).install()), options=options)
         with st.spinner("Loading page..."):
             browser.get("https://duckduckgo.com")
             #wait for the page to fully load
