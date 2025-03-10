@@ -74,6 +74,7 @@ if st.session_state.mode == 1:
             st.rerun()
     if st.button("Load DuckDuckGo"):
         init_brow()
+        #open this in selenium browser
         with st.spinner("Loading page..."):
             st.session_state.browser.get("https://duckduckgo.com")
             #wait for the page to fully load
