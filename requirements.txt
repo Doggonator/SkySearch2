@@ -1,0 +1,5 @@
+selenium
+streamlit
+webdriver_manager
+streamlit_image_coordinates
+PIL
