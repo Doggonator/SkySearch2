@@ -40,6 +40,8 @@ st.write("A better solution to bypass organizational web censorship")
 if st.session_state.mode == 1:
     url_input = st.text_input("Please input a url here (i.e. https://duckduckgo.com): ")
     if url_input and st.button("Load page"):
+        if "browser" not in st.session_state or not hasattr(st.session_state["browser"], "service"):
+            st.session_state.browser = create_browser()
         #open this in selenium browser
         with st.spinner("Loading page..."):
             st.session_state.browser.get(url_input)
@@ -60,6 +62,8 @@ if st.session_state.mode == 1:
             st.session_state.mode = 2
             st.rerun()
     if st.button("Load DuckDuckGo"):
+        if "browser" not in st.session_state or not hasattr(st.session_state["browser"], "service"):
+            st.session_state.browser = create_browser()
         with st.spinner("Loading page..."):
             st.session_state.browser.get("https://duckduckgo.com")
             #wait for the page to fully load
