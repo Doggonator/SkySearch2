@@ -2,7 +2,7 @@ import streamlit as st
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from webdriver_manager.chrome import ChromeDriverManager
-from selenium.webdriver.chrome.service import Service as ChromeService
+from selenium.webdriver.chrome.service import Service as Service
 from streamlit_image_coordinates import streamlit_image_coordinates
 import time
 from selenium.webdriver.common.action_chains import ActionChains
@@ -25,7 +25,7 @@ if st.session_state.mode == 1:
             options = Options()
             options.add_argument("--window_size={window_size[1]},{window_size[2]}")
             options.add_argument('--headless=new')
-            browser = webdriver.Chrome(service=ChromeService(ChromeDriverManager().install()), options=options)
+            browser = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
         with st.spinner("Loading page..."):
             browser.get(url_input)
             #wait for the page to fully load
@@ -51,7 +51,7 @@ if st.session_state.mode == 1:
             options = Options()
             options.add_argument("--window_size={window_size[1]},{window_size[2]}")
             options.add_argument('--headless=new')
-            browser = webdriver.Chrome(service=ChromeService(ChromeDriverManager().install()), options=options)
+            browser = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
         with st.spinner("Loading page..."):
             browser.get("https://duckduckgo.com")
             #wait for the page to fully load
