@@ -20,6 +20,16 @@ def create_browser():#in streamlit cloud, browser has to be reloaded on each int
         options = Options()
         options.add_argument("--window_size={window_size[1]},{window_size[2]}")
         options.add_argument('--headless=new')
+        #reduce mem usage, with some options
+        options.add_argument("--no-sandbox")
+        options.add_argument("--disable-dev-shm-usage")
+        options.add_argument("--disable-gpu")
+        options.add_argument("--disable-software-rasterizer")
+        options.add_argument("--disable-extensions")
+        options.add_argument("--disable-background-networking")
+        options.add_argument("--remote-debugging-port=9222")
+        options.add_argument("--disable-logging")
+        options.add_argument("--log-level=3")
         if not dev:
             browser = webdriver.Chrome(service=Service(ChromeDriverManager(chrome_type=ChromeType.CHROMIUM).install()), options=options)
         else:
