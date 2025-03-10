@@ -11,7 +11,8 @@ import io
 from selenium.webdriver.common.keys import Keys
 from webdriver_manager.core.os_manager import ChromeType
 st.set_page_config(layout="wide", page_title='SkySearch2')
-st.session_state.text = ""
+if "text" not in st.session_state:
+    st.session_state.text = ""
 
 dev = False#use dev to make it run locally, turn off when pushing to streamlit
 
@@ -141,6 +142,7 @@ else:
 
 
     if reload and not st.session_state.avoid_reloop:#an event occured, we need to reload the window
+        st.session_state.text = ""#get rid of text inputted into the input box
         with st.spinner("Getting browser response..."):
             #wait for the page to fully load
             while st.session_state.browser.execute_script("return document.readyState;") != "complete":
