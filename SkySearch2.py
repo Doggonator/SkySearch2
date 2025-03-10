@@ -25,9 +25,11 @@ def create_browser():#in streamlit cloud, browser has to be reloaded on each int
         else:
             browser = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
         return browser
+def init_brow():
+    if "browser" not in st.session_state or not hasattr(st.session_state["browser"], "service"):
+        st.session_state.browser = create_browser()
 
-if "browser" not in st.session_state or not hasattr(st.session_state["browser"], "service"):
-    st.session_state.browser = create_browser()
+init_brow()
 
 
 window_size = (1000, 800)
@@ -40,8 +42,7 @@ st.write("A better solution to bypass organizational web censorship")
 if st.session_state.mode == 1:
     url_input = st.text_input("Please input a url here (i.e. https://duckduckgo.com): ")
     if url_input and st.button("Load page"):
-        if "browser" not in st.session_state or not hasattr(st.session_state["browser"], "service"):
-            st.session_state.browser = create_browser()
+        init_brow()
         #open this in selenium browser
         with st.spinner("Loading page..."):
             st.session_state.browser.get(url_input)
@@ -62,8 +63,7 @@ if st.session_state.mode == 1:
             st.session_state.mode = 2
             st.rerun()
     if st.button("Load DuckDuckGo"):
-        if "browser" not in st.session_state or not hasattr(st.session_state["browser"], "service"):
-            st.session_state.browser = create_browser()
+        init_brow()
         with st.spinner("Loading page..."):
             st.session_state.browser.get("https://duckduckgo.com")
             #wait for the page to fully load
