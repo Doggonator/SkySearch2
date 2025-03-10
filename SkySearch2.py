@@ -10,8 +10,27 @@ from PIL import Image
 import io
 from selenium.webdriver.common.keys import Keys
 from webdriver_manager.core.os_manager import ChromeType
+st.set_page_config(layout="wide", page_title='SkySearch2')
+
+
+dev = False#use dev to make it run locally, turn off when pushing to streamlit
+
+def create_browser():#in streamlit cloud, browser has to be reloaded on each interaction
+    with st.spinner("Loading Browser..."):
+        options = Options()
+        options.add_argument("--window_size={window_size[1]},{window_size[2]}")
+        options.add_argument('--headless=new')
+        if not dev:
+            browser = webdriver.Chrome(service=Service(ChromeDriverManager(chrome_type=ChromeType.CHROMIUM).install()), options=options)
+        else:
+            browser = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
+        return browser
+
+if "browser" not in st.session_state or not hasattr(st.session_state["browser"], "service"):
+    st.session_state.browser = create_browser()
+
+
 window_size = (1000, 800)
-st.set_page_config(layout="wide")
 if "mode" not in st.session_state:
     st.session_state.mode = 1
 if "avoid_reloop" not in st.session_state:
@@ -22,54 +41,41 @@ if st.session_state.mode == 1:
     url_input = st.text_input("Please input a url here (i.e. https://duckduckgo.com): ")
     if url_input and st.button("Load page"):
         #open this in selenium browser
-        with st.spinner("Initializing browser..."):
-            options = Options()
-            options.add_argument("--window_size={window_size[1]},{window_size[2]}")
-            options.add_argument('--headless=new')
-            browser = webdriver.Chrome(service=Service(ChromeDriverManager(chrome_type=ChromeType.CHROMIUM).install()), options=options)
         with st.spinner("Loading page..."):
-            browser.get(url_input)
+            st.session_state.browser.get(url_input)
             #wait for the page to fully load
-            while browser.execute_script("return document.readyState;") != "complete":
+            while st.session_state.browser.execute_script("return document.readyState;") != "complete":
                 time.sleep(0.1)
         with st.spinner("Booting up display..."):
             #get a screenshot as PIL image
-            temp = io.BytesIO(browser.get_screenshot_as_png())
+            temp = io.BytesIO(st.session_state.browser.get_screenshot_as_png())
  
             image = Image.open(temp)
             #resize the image to the proper size, as it may be over- or under-sized
-            width = browser.execute_script("return window.innerWidth")#get size of browser, not window
-            height = browser.execute_script("return window.innerHeight")
+            width = st.session_state.browser.execute_script("return window.innerWidth")#get size of browser, not window
+            height = st.session_state.browser.execute_script("return window.innerHeight")
             image = image.resize((width, height))
             st.session_state.display_screenshot = image
             #go into browsing mode
-            st.session_state.browser = browser
             st.session_state.mode = 2
             st.rerun()
     if st.button("Load DuckDuckGo"):
-        #open this in selenium browser
-        with st.spinner("Initializing browser..."):
-            options = Options()
-            options.add_argument("--window_size={window_size[1]},{window_size[2]}")
-            options.add_argument('--headless=new')
-            browser = webdriver.Chrome(service=Service(ChromeDriverManager(chrome_type=ChromeType.CHROMIUM).install()), options=options)
         with st.spinner("Loading page..."):
-            browser.get("https://duckduckgo.com")
+            st.session_state.browser.get("https://duckduckgo.com")
             #wait for the page to fully load
-            while browser.execute_script("return document.readyState;") != "complete":
+            while st.session_state.browser.execute_script("return document.readyState;") != "complete":
                 time.sleep(0.1)
         with st.spinner("Booting up display..."):
             #get a screenshot as PIL image
-            temp = io.BytesIO(browser.get_screenshot_as_png())
+            temp = io.BytesIO(st.session_state.browser.get_screenshot_as_png())
  
             image = Image.open(temp)
             #resize the image to the proper size, as it may be over- or under-sized
-            width = browser.execute_script("return window.innerWidth")#get size of browser, not window
-            height = browser.execute_script("return window.innerHeight")
+            width = st.session_state.browser.execute_script("return window.innerWidth")#get size of browser, not window
+            height = st.session_state.browser.execute_script("return window.innerHeight")
             image = image.resize((width, height))
             st.session_state.display_screenshot = image
             #go into browsing mode
-            st.session_state.browser = browser
             st.session_state.mode = 2
             st.rerun()
 else:
@@ -105,16 +111,6 @@ else:
         if st.button("Enter/Return"):
             actions = ActionChains(st.session_state.browser)
             actions.send_keys(Keys.ENTER).perform()
-            reload = True
-    #add back/forward buttons
-    nav = st.columns(2)
-    with nav[0]:
-        if st.button("⇦Back⇦"):
-            st.session_state.browser.back()
-            reload = True
-    with nav[1]:
-        if st.button("⇨Forward⇨"):
-            st.session_state.browser.forward()
             reload = True
     clicked_coords = streamlit_image_coordinates(st.session_state.display_screenshot)#find any clicked coordinates on the screen
     if clicked_coords:
