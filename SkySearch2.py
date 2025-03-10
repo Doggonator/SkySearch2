@@ -11,7 +11,7 @@ import io
 from selenium.webdriver.common.keys import Keys
 from webdriver_manager.core.os_manager import ChromeType
 st.set_page_config(layout="wide", page_title='SkySearch2')
-
+st.session_state.text = ""
 
 dev = False#use dev to make it run locally, turn off when pushing to streamlit
 
@@ -105,7 +105,7 @@ else:
         if st.button("Reload viewport"):
             reload = True
     #typing, special keys
-    text_input = st.text_area("Input anything to type here (returns can also be entered here)")
+    text_input = st.text_area("Input anything to type here (returns can also be entered here)", key='text')
     if text_input:
         actions = ActionChains(st.session_state.browser)
         actions.send_keys(text_input).perform()
