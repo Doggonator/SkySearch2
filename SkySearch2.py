@@ -12,7 +12,7 @@ from selenium.webdriver.common.keys import Keys
 from webdriver_manager.core.os_manager import ChromeType
 st.set_page_config(layout="wide", page_title='SkySearch2')
 
-dev = True#use dev to make it run locally, turn off when pushing to streamlit
+dev = False#use dev to make it run locally, turn off when pushing to streamlit
 
 def create_browser():#in streamlit cloud, browser has to be reloaded on each interaction
     with st.spinner("Loading Browser..."):
