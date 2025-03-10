@@ -11,8 +11,6 @@ import io
 from selenium.webdriver.common.keys import Keys
 from webdriver_manager.core.os_manager import ChromeType
 st.set_page_config(layout="wide", page_title='SkySearch2')
-if "text" not in st.session_state:
-    st.session_state.text = ""
 
 dev = False#use dev to make it run locally, turn off when pushing to streamlit
 
@@ -106,11 +104,13 @@ else:
         if st.button("Reload viewport"):
             reload = True
     #typing, special keys
-    text_input = st.text_area("Input anything to type here (returns can also be entered here)", key='text')
-    if text_input:
-        actions = ActionChains(st.session_state.browser)
-        actions.send_keys(text_input).perform()
-        reload = True
+    with st.form(clear_on_submit = True, key = 'text'):
+        text_input = st.text_area("Input anything to type here (returns can also be entered here)")
+        submit = st.form_submit_button("Input")
+        if submit:
+            actions = ActionChains(st.session_state.browser)
+            actions.send_keys(text_input).perform()
+            reload = True
     #get some of the special buttons
     buttons = st.columns(3)#esc, backspace, enter
     with buttons[0]:
@@ -142,7 +142,6 @@ else:
 
 
     if reload and not st.session_state.avoid_reloop:#an event occured, we need to reload the window
-        st.session_state.text = ""#get rid of text inputted into the input box
         with st.spinner("Getting browser response..."):
             #wait for the page to fully load
             while st.session_state.browser.execute_script("return document.readyState;") != "complete":
