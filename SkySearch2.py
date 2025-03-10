@@ -12,7 +12,7 @@ from selenium.webdriver.common.keys import Keys
 from webdriver_manager.core.os_manager import ChromeType
 st.set_page_config(layout="wide", page_title='SkySearch2')
 
-dev = False#use dev to make it run locally, turn off when pushing to streamlit
+dev = True#use dev to make it run locally, turn off when pushing to streamlit
 
 def create_browser():#in streamlit cloud, browser has to be reloaded on each interaction
     with st.spinner("Loading Browser..."):
@@ -58,7 +58,7 @@ if "mode" not in st.session_state:
 if 'auto_reload' not in st.session_state:
     st.session_state.auto_reload = False
 st.title("SkySearch 2")
-st.caption("Version 1.0")
+st.caption("Version 1.01")
 st.write("A better solution to bypass organizational web censorship")
 if st.session_state.mode == 1:
     url_input = st.text_input("Please input a url here (i.e. https://duckduckgo.com): ")
@@ -95,6 +95,7 @@ else:
         if st.button("Go back to homepage"):
             st.session_state.mode = 1
             st.session_state.browser.quit()
+            del st.session_state['browser']#reload the browser later, close it for now, to save memory, and make sure it is reloaded by removing a reference to it
             st.rerun()
     with cols[1]:
         if st.button("Reload viewport"):
