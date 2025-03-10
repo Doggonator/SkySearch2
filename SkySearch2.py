@@ -12,7 +12,7 @@ from selenium.webdriver.common.keys import Keys
 from webdriver_manager.core.os_manager import ChromeType
 st.set_page_config(layout="wide", page_title='SkySearch2')
 
-dev = False#use dev to make it run locally, turn off when pushing to streamlit
+dev = True#use dev to make it run locally, turn off when pushing to streamlit
 
 def create_browser():#in streamlit cloud, browser has to be reloaded on each interaction
     with st.spinner("Loading Browser..."):
@@ -37,6 +37,17 @@ def create_browser():#in streamlit cloud, browser has to be reloaded on each int
 def init_brow():
     if "browser" not in st.session_state or not hasattr(st.session_state["browser"], "service"):
         st.session_state.browser = create_browser()
+def capture_screenshot():
+    if 'browser' in st.session_state:#properly initialized, complete screenshot
+        #get a screenshot as PIL image
+        temp = io.BytesIO(st.session_state.browser.get_screenshot_as_png())
+
+        image = Image.open(temp)
+        #resize the image to the proper size, as it may be over- or under-sized
+        width = st.session_state.browser.execute_script("return window.innerWidth")#get size of browser, not window
+        height = st.session_state.browser.execute_script("return window.innerHeight")
+        image = image.resize((width, height))
+        st.session_state.display_screenshot = image
 
 init_brow()
 
@@ -44,9 +55,10 @@ init_brow()
 window_size = (1000, 800)
 if "mode" not in st.session_state:
     st.session_state.mode = 1
-if "avoid_reloop" not in st.session_state:
-    st.session_state.avoid_reloop = False
+if 'auto_reload' not in st.session_state:
+    st.session_state.auto_reload = False
 st.title("SkySearch 2")
+st.caption("Version 1.0")
 st.write("A better solution to bypass organizational web censorship")
 if st.session_state.mode == 1:
     url_input = st.text_input("Please input a url here (i.e. https://duckduckgo.com): ")
@@ -59,15 +71,7 @@ if st.session_state.mode == 1:
             while st.session_state.browser.execute_script("return document.readyState;") != "complete":
                 time.sleep(0.1)
         with st.spinner("Booting up display..."):
-            #get a screenshot as PIL image
-            temp = io.BytesIO(st.session_state.browser.get_screenshot_as_png())
- 
-            image = Image.open(temp)
-            #resize the image to the proper size, as it may be over- or under-sized
-            width = st.session_state.browser.execute_script("return window.innerWidth")#get size of browser, not window
-            height = st.session_state.browser.execute_script("return window.innerHeight")
-            image = image.resize((width, height))
-            st.session_state.display_screenshot = image
+            capture_screenshot()
             #go into browsing mode
             st.session_state.mode = 2
             st.rerun()
@@ -80,21 +84,13 @@ if st.session_state.mode == 1:
             while st.session_state.browser.execute_script("return document.readyState;") != "complete":
                 time.sleep(0.1)
         with st.spinner("Booting up display..."):
-            #get a screenshot as PIL image
-            temp = io.BytesIO(st.session_state.browser.get_screenshot_as_png())
- 
-            image = Image.open(temp)
-            #resize the image to the proper size, as it may be over- or under-sized
-            width = st.session_state.browser.execute_script("return window.innerWidth")#get size of browser, not window
-            height = st.session_state.browser.execute_script("return window.innerHeight")
-            image = image.resize((width, height))
-            st.session_state.display_screenshot = image
+            capture_screenshot()
             #go into browsing mode
             st.session_state.mode = 2
             st.rerun()
 else:
     reload = False
-    cols = st.columns(2)
+    cols = st.columns(3)
     with cols[0]:
         if st.button("Go back to homepage"):
             st.session_state.mode = 1
@@ -103,31 +99,38 @@ else:
     with cols[1]:
         if st.button("Reload viewport"):
             reload = True
+    with cols[2]:
+        yes = st.session_state.auto_reload
+        if st.button("Toggle auto-reload display (Possible flash warning). Currently: "+str(yes)):
+            st.session_state.auto_reload = not st.session_state.auto_reload
+            st.rerun()
+        st.caption("Disables many buttons for performance reasons")
     #typing, special keys
-    with st.form(clear_on_submit = True, key = 'text'):
-        text_input = st.text_area("Input anything to type here (returns can also be entered here)")
-        submit = st.form_submit_button("Input")
-        if submit:
-            actions = ActionChains(st.session_state.browser)
-            actions.send_keys(text_input).perform()
-            reload = True
-    #get some of the special buttons
-    buttons = st.columns(3)#esc, backspace, enter
-    with buttons[0]:
-        if st.button("Escape"):
-            actions = ActionChains(st.session_state.browser)
-            actions.send_keys(Keys.ESCAPE).perform()
-            reload = True
-    with buttons[1]:
-        if st.button("Backspace"):
-            actions = ActionChains(st.session_state.browser)
-            actions.send_keys(Keys.BACKSPACE).perform()
-            reload = True
-    with buttons[2]:
-        if st.button("Enter/Return"):
-            actions = ActionChains(st.session_state.browser)
-            actions.send_keys(Keys.ENTER).perform()
-            reload = True
+    if not st.session_state.auto_reload:
+        with st.form(clear_on_submit = True, key = 'text'):
+            text_input = st.text_area("Input anything to type here (returns can also be entered here). Make sure to press Input instead of clicking off of this.")
+            submit = st.form_submit_button("Input")
+            if submit:
+                actions = ActionChains(st.session_state.browser)
+                actions.send_keys(text_input).perform()
+                reload = True
+        #get some of the special buttons
+        buttons = st.columns(3)#esc, backspace, enter
+        with buttons[0]:
+            if st.button("Escape"):
+                actions = ActionChains(st.session_state.browser)
+                actions.send_keys(Keys.ESCAPE).perform()
+                reload = True
+        with buttons[1]:
+            if st.button("Backspace"):
+                actions = ActionChains(st.session_state.browser)
+                actions.send_keys(Keys.BACKSPACE).perform()
+                reload = True
+        with buttons[2]:
+            if st.button("Enter/Return"):
+                actions = ActionChains(st.session_state.browser)
+                actions.send_keys(Keys.ENTER).perform()
+                reload = True
     clicked_coords = streamlit_image_coordinates(st.session_state.display_screenshot)#find any clicked coordinates on the screen
     if clicked_coords:
         with st.spinner('Loading click...'):
@@ -141,21 +144,15 @@ else:
             reload = True
 
 
-    if reload and not st.session_state.avoid_reloop:#an event occured, we need to reload the window
+    if reload:#an event occured, we need to reload the window
         with st.spinner("Getting browser response..."):
             #wait for the page to fully load
             while st.session_state.browser.execute_script("return document.readyState;") != "complete":
                 time.sleep(0.1)
-            #get a screenshot as PIL image
-            temp = io.BytesIO(st.session_state.browser.get_screenshot_as_png())
 
-            image = Image.open(temp)
-            #resize the image to the proper size, as it may be over- or under-sized
-            width = st.session_state.browser.execute_script("return window.innerWidth")#get size of browser, not window
-            height = st.session_state.browser.execute_script("return window.innerHeight")
-            image = image.resize((width, height))
-            st.session_state.display_screenshot = image
-            st.session_state.avoid_reloop = True
+            capture_screenshot()        
             st.rerun()
-    if st.session_state.avoid_reloop:#sometimes, reloops happen, where this else statement gets called over and over. This prevents it.
-        st.session_state.avoid_reloop = False
+    #check if auto-reload is enabled. If so, we do that here, so that everything can be drawn
+    if st.session_state.auto_reload:
+        capture_screenshot()
+        st.rerun()
