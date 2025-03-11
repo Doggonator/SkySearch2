@@ -3,4 +3,3 @@ streamlit
 webdriver_manager
 streamlit_image_coordinates
 pillow
-undetected_chromedriver

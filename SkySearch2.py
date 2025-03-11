@@ -12,8 +12,6 @@ from selenium.webdriver.common.keys import Keys
 from webdriver_manager.core.os_manager import ChromeType
 import random
 import math
-import undetected_chromedriver as uc
-uc.TARGET_VERSION = 134
 st.set_page_config(layout="wide", page_title='SkySearch2')
 
 dev = False#use dev to make it run locally, turn off when pushing to streamlit
@@ -35,9 +33,9 @@ def create_browser():#in streamlit cloud, browser has to be reloaded on each int
         options.add_argument("--disable-logging")
         options.add_argument("--log-level=3")
         if not dev:
-            browser = uc.Chrome(service=Service(ChromeDriverManager(chrome_type=ChromeType.CHROMIUM).install()), options=options)
+            browser = webdriver.Chrome(service=Service(ChromeDriverManager(chrome_type=ChromeType.CHROMIUM).install()), options=options)
         else:
-            browser = uc.Chrome(service=Service(ChromeDriverManager().install()), options=options)
+            browser = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
         return browser
 def init_brow():
     if "browser" not in st.session_state or not hasattr(st.session_state["browser"], "service"):
@@ -106,7 +104,7 @@ else:
             reload = True
     #typing, special keys
     with st.form(clear_on_submit = True, key = 'text'):
-        text_input = st.text_area("Input anything to type here (returns can also be entered here). Make sure to press Input instead of clicking off of this.")
+        text_input = st.text_area("Input anything to type here (returns can also be entered here).")
         submit = st.form_submit_button("Input")
         if submit:
             actions = ActionChains(st.session_state.browser)
