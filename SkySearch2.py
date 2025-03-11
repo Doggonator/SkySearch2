@@ -13,6 +13,7 @@ from webdriver_manager.core.os_manager import ChromeType
 import random
 import math
 import undetected_chromedriver as uc
+uc.TARGET_VERSION = 134
 st.set_page_config(layout="wide", page_title='SkySearch2')
 
 dev = False#use dev to make it run locally, turn off when pushing to streamlit
