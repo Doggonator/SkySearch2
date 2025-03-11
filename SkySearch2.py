@@ -10,14 +10,18 @@ from PIL import Image
 import io
 from selenium.webdriver.common.keys import Keys
 from webdriver_manager.core.os_manager import ChromeType
+import random
+import math
+import undetected_chromedriver as uc
 st.set_page_config(layout="wide", page_title='SkySearch2')
 
 dev = False#use dev to make it run locally, turn off when pushing to streamlit
-
 def create_browser():#in streamlit cloud, browser has to be reloaded on each interaction
+    window_size = (1000, 800)
     with st.spinner("Loading Browser..."):
         options = Options()
-        options.add_argument("--window_size={window_size[1]},{window_size[2]}")
+        window_size = '--windowsize='+str(window_size[0])+","+str(window_size[1])
+        options.add_argument(window_size)
         options.add_argument('--headless=new')
         #reduce mem usage, with some options
         options.add_argument("--no-sandbox")
@@ -30,9 +34,9 @@ def create_browser():#in streamlit cloud, browser has to be reloaded on each int
         options.add_argument("--disable-logging")
         options.add_argument("--log-level=3")
         if not dev:
-            browser = webdriver.Chrome(service=Service(ChromeDriverManager(chrome_type=ChromeType.CHROMIUM).install()), options=options)
+            browser = uc.Chrome(service=Service(ChromeDriverManager(chrome_type=ChromeType.CHROMIUM).install()), options=options)
         else:
-            browser = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
+            browser = uc.Chrome(service=Service(ChromeDriverManager().install()), options=options)
         return browser
 def init_brow():
     if "browser" not in st.session_state or not hasattr(st.session_state["browser"], "service"):
@@ -51,16 +55,14 @@ def capture_screenshot():
 
 init_brow()
 
-
-window_size = (1000, 800)
 if "mode" not in st.session_state:
     st.session_state.mode = 1
-if 'auto_reload' not in st.session_state:
-    st.session_state.auto_reload = False
-st.title("SkySearch 2")
-st.caption("Version 1.01")
-st.write("A better solution to bypass organizational web censorship")
+if 'avoid_reload' not in st.session_state:
+    st.session_state.avoid_reload = False
 if st.session_state.mode == 1:
+    st.title("SkySearch 2")
+    st.caption("Version 1.1")
+    st.write("A better solution to bypass organizational web censorship")
     url_input = st.text_input("Please input a url here (i.e. https://duckduckgo.com): ")
     if url_input and st.button("Load page"):
         init_brow()
@@ -90,52 +92,50 @@ if st.session_state.mode == 1:
             st.rerun()
 else:
     reload = False
-    cols = st.columns(3)
+    cols = st.columns(2)
     with cols[0]:
         if st.button("Go back to homepage"):
             st.session_state.mode = 1
             st.session_state.browser.quit()
             del st.session_state['browser']#reload the browser later, close it for now, to save memory, and make sure it is reloaded by removing a reference to it
+            st.session_state.avoid_reload = False
             st.rerun()
     with cols[1]:
         if st.button("Reload viewport"):
             reload = True
-    with cols[2]:
-        yes = st.session_state.auto_reload
-        if st.button("Toggle auto-reload display (Possible flash warning). Currently: "+str(yes)):
-            st.session_state.auto_reload = not st.session_state.auto_reload
-            st.rerun()
-        st.caption("Disables many buttons for performance reasons")
     #typing, special keys
-    if not st.session_state.auto_reload:
-        with st.form(clear_on_submit = True, key = 'text'):
-            text_input = st.text_area("Input anything to type here (returns can also be entered here). Make sure to press Input instead of clicking off of this.")
-            submit = st.form_submit_button("Input")
-            if submit:
-                actions = ActionChains(st.session_state.browser)
-                actions.send_keys(text_input).perform()
-                reload = True
-        #get some of the special buttons
-        buttons = st.columns(3)#esc, backspace, enter
-        with buttons[0]:
-            if st.button("Escape"):
-                actions = ActionChains(st.session_state.browser)
-                actions.send_keys(Keys.ESCAPE).perform()
-                reload = True
-        with buttons[1]:
-            if st.button("Backspace"):
-                actions = ActionChains(st.session_state.browser)
-                actions.send_keys(Keys.BACKSPACE).perform()
-                reload = True
-        with buttons[2]:
-            if st.button("Enter/Return"):
-                actions = ActionChains(st.session_state.browser)
-                actions.send_keys(Keys.ENTER).perform()
-                reload = True
+    with st.form(clear_on_submit = True, key = 'text'):
+        text_input = st.text_area("Input anything to type here (returns can also be entered here). Make sure to press Input instead of clicking off of this.")
+        submit = st.form_submit_button("Input")
+        if submit:
+            actions = ActionChains(st.session_state.browser)
+            k = list(text_input)
+            for item in k:
+                actions.send_keys(item).perform()
+                time.sleep(random.uniform(0.01, 0.04))
+            reload = True
+    #get some of the special buttons
+    buttons = st.columns(3)#esc, backspace, enter
+    with buttons[0]:
+        if st.button("Escape"):
+            actions = ActionChains(st.session_state.browser)
+            actions.send_keys(Keys.ESCAPE).perform()
+            reload = True
+    with buttons[1]:
+        if st.button("Backspace"):
+            actions = ActionChains(st.session_state.browser)
+            actions.send_keys(Keys.BACKSPACE).perform()
+            reload = True
+    with buttons[2]:
+        if st.button("Enter/Return"):
+            actions = ActionChains(st.session_state.browser)
+            actions.send_keys(Keys.ENTER).perform()
+            reload = True
     clicked_coords = streamlit_image_coordinates(st.session_state.display_screenshot)#find any clicked coordinates on the screen
-    if clicked_coords:
+    if clicked_coords and not st.session_state.avoid_reload:
         with st.spinner('Loading click...'):
 
+            #The for loops below are used to move the mouse in an organic way, to make sure no anti-bot measures happen.
             x, y = clicked_coords['x'], clicked_coords['y']
             actions = ActionChains(st.session_state.browser)
             body = st.session_state.browser.find_element("tag name", "body")#should be top left of the window
@@ -145,15 +145,14 @@ else:
             reload = True
 
 
-    if reload:#an event occured, we need to reload the window
+    if reload and not st.session_state.avoid_reload:#an event occured, we need to reload the window
         with st.spinner("Getting browser response..."):
             #wait for the page to fully load
             while st.session_state.browser.execute_script("return document.readyState;") != "complete":
                 time.sleep(0.1)
 
-            capture_screenshot()        
+            capture_screenshot()       
+            st.session_state.avoid_reload = True 
             st.rerun()
-    #check if auto-reload is enabled. If so, we do that here, so that everything can be drawn
-    if st.session_state.auto_reload:
-        capture_screenshot()
-        st.rerun()
+    if st.session_state.avoid_reload:
+        st.session_state.avoid_reload = False
