@@ -16,11 +16,9 @@ st.set_page_config(layout="wide", page_title='SkySearch2')
 
 dev = False#use dev to make it run locally, turn off when pushing to streamlit
 def create_browser():#in streamlit cloud, browser has to be reloaded on each interaction
-    window_size = (1000, 800)
+    window_size = (1000, 2000)
     with st.spinner("Loading Browser..."):
         options = Options()
-        window_size = '--windowsize='+str(window_size[0])+","+str(window_size[1])
-        options.add_argument(window_size)
         options.add_argument('--headless=new')
         #reduce mem usage, with some options
         options.add_argument("--no-sandbox")
@@ -36,6 +34,7 @@ def create_browser():#in streamlit cloud, browser has to be reloaded on each int
             browser = webdriver.Chrome(service=Service(ChromeDriverManager(chrome_type=ChromeType.CHROMIUM).install()), options=options)
         else:
             browser = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
+        browser.set_window_size(window_size[0], window_size[1])
         return browser
 def init_brow():
     if "browser" not in st.session_state or not hasattr(st.session_state["browser"], "service"):
@@ -60,7 +59,7 @@ if 'avoid_reload' not in st.session_state:
     st.session_state.avoid_reload = False
 if st.session_state.mode == 1:
     st.title("SkySearch 2")
-    st.caption("Version 1.1")
+    st.caption("Version 1.1.1")
     st.write("A better solution to bypass organizational web censorship")
     url_input = st.text_input("Please input a url here (i.e. https://duckduckgo.com): ")
     if url_input and st.button("Load page"):
