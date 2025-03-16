@@ -63,7 +63,7 @@ def init_brow():
                 st.session_state.browser = create_browser()
                 break
             except:#retry reloading browser, as it failed. Sometimes that happens in the cloud distro
-                pass
+                st.info("Browser boot failed, trying again.")
 def capture_screenshot():
     if 'browser' in st.session_state:#properly initialized, complete screenshot
         #get a screenshot as PIL image
