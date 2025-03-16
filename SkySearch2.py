@@ -30,15 +30,40 @@ def create_browser():#in streamlit cloud, browser has to be reloaded on each int
         options.add_argument("--remote-debugging-port=9222")
         options.add_argument("--disable-logging")
         options.add_argument("--log-level=3")
+        #reduce detectability as bot with some more options
+        options.add_argument("--disable-blink-features=AutomationControlled")#make it not openly admit to being a bot
+        custom_ua = ("Mozilla/5.0 (Windows NT 10.0; Win64; x64) "#make us not look exactly like a bot, where this would say HeadlessChrome
+             "AppleWebKit/537.36 (KHTML, like Gecko) "
+             "Chrome/90.0.4430.212 Safari/537.36")
+        options.add_argument(f"user-agent={custom_ua}")
+        options.add_experimental_option("excludeSwitches", ["enable-automation"])
         if not dev:
             browser = webdriver.Chrome(service=Service(ChromeDriverManager(chrome_type=ChromeType.CHROMIUM).install()), options=options)
         else:
             browser = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
         browser.set_window_size(window_size[0], window_size[1])
+        #a bit more anti-anti-bot
+        browser.execute_cdp_cmd(
+            "Page.addScriptToEvaluateOnNewDocument",
+            {"source": """
+            //remove the webdriver property
+            Object.defineProperty(navigator, 'webdriver', {get: () => undefined});
+            //fake the languages property
+            Object.defineProperty(navigator, 'languages', {get: () => ['en-US', 'en']});
+            //fake the plugins property (just need a non-zero length)
+            Object.defineProperty(navigator, 'plugins', {get: () => [1, 2, 3, 4, 5]});
+            """}
+        )
+        
         return browser
 def init_brow():
     if "browser" not in st.session_state or not hasattr(st.session_state["browser"], "service"):
-        st.session_state.browser = create_browser()
+        while True:
+            try:
+                st.session_state.browser = create_browser()
+                break
+            except:#retry reloading browser, as it failed. Sometimes that happens in the cloud distro
+                pass
 def capture_screenshot():
     if 'browser' in st.session_state:#properly initialized, complete screenshot
         #get a screenshot as PIL image
@@ -59,7 +84,7 @@ if 'avoid_reload' not in st.session_state:
     st.session_state.avoid_reload = False
 if st.session_state.mode == 1:
     st.title("SkySearch 2")
-    st.caption("Version 1.1.1")
+    st.caption("Version 1.2.0")
     st.write("A better solution to bypass organizational web censorship")
     url_input = st.text_input("Please input a url here (i.e. https://duckduckgo.com): ")
     if url_input and st.button("Load page"):
